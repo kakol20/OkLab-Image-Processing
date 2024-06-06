@@ -4,7 +4,8 @@
 #include <sstream>
 
 #include "../ext/json/json.hpp"
-#include "colourSpace/ColourSpace.hpp"
+#include "colourSpace/ColorSpace.hpp"
+#include "colourSpace/OkLab.h"
 #include "colourSpace/OkLCh.h"
 #include "colourSpace/sRGB.hpp"
 #include "image/Image.h"

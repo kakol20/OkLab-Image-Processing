@@ -1,12 +1,13 @@
 #pragma once
 
-#include "ColourSpace.hpp"
+#include "ColorSpace.hpp"
 #include <cmath>
+#include <sstream>
 
-class sRGB : public ColourSpace {
+class sRGB : public ColorSpace {
 public:
-  sRGB(const double r = 0, const double g = 0, const double b = 0) : ColourSpace(r, g, b) {};
-  sRGB(const sRGB& other) : ColourSpace(other) {};
+  sRGB(const double r = 0, const double g = 0, const double b = 0) : ColorSpace(r, g, b) {};
+  sRGB(const sRGB& other) : ColorSpace(other) {};
 
   double GetR() const { return m_a; };
   double GetG() const { return m_b; };
@@ -39,8 +40,10 @@ public:
   bool IsInside() const;
 
   std::string Debug(const double maxValue = 1.) const;
+  std::string UintDebug() const;
 
   static sRGB HexTosRGB(const std::string hex);
+  std::string sRGBtoHex() const;
 };
 
 
@@ -63,31 +66,31 @@ inline uint8_t sRGB::GetBUInt() const {
 }
 
 inline sRGB& sRGB::operator/=(const sRGB& other) {
-  ColourSpace lhs(other);
-  ColourSpace::operator/=(lhs);
+  ColorSpace lhs(other);
+  ColorSpace::operator/=(lhs);
   return *this;
 }
 
 inline sRGB& sRGB::operator*=(const sRGB& other) {
-  ColourSpace lhs(other);
-  ColourSpace::operator*=(lhs);
+  ColorSpace lhs(other);
+  ColorSpace::operator*=(lhs);
   return *this;
 }
 
 inline sRGB& sRGB::operator+=(const sRGB& other) {
-  ColourSpace lhs(other);
-  ColourSpace::operator+=(lhs);
+  ColorSpace lhs(other);
+  ColorSpace::operator+=(lhs);
   return *this;
 }
 
 inline sRGB& sRGB::operator-=(const sRGB& other) {
-  ColourSpace lhs(other);
-  ColourSpace::operator-=(lhs);
+  ColorSpace lhs(other);
+  ColorSpace::operator-=(lhs);
   return *this;
 }
 
 inline sRGB& sRGB::operator*=(const double scalar) {
-  ColourSpace::operator*=(scalar);
+  ColorSpace::operator*=(scalar);
   return *this;
 }
 
@@ -96,7 +99,11 @@ inline bool sRGB::IsInside() const {
 }
 
 inline std::string sRGB::Debug(const double maxValue) const {
-  return std::to_string(m_a * maxValue) + ' ' + std::to_string(m_b * maxValue) + ' ' + std::to_string(m_c * maxValue) + '\n';
+  return std::to_string(m_a * maxValue) + ' ' + std::to_string(m_b * maxValue) + ' ' + std::to_string(m_c * maxValue);
+}
+
+inline std::string sRGB::UintDebug() const {
+  return std::to_string((*this).GetRUInt()) + ' ' + std::to_string((*this).GetGUInt()) + ' ' + std::to_string((*this).GetBUInt());
 }
 
 inline sRGB sRGB::HexTosRGB(const std::string hex) {
@@ -107,4 +114,21 @@ inline sRGB sRGB::HexTosRGB(const std::string hex) {
   const unsigned int bMask = 0x0000FF;
 
   return sRGB(double((hexInt & rMask) >> 16) / 255., double((hexInt & gMask) >> 8) / 255., double(hexInt & bMask) / 255.);
+}
+
+inline std::string sRGB::sRGBtoHex() const {
+  const unsigned int r = (unsigned int)(*this).GetRUInt();
+  const unsigned int g = (unsigned int)(*this).GetGUInt();
+  const unsigned int b = (unsigned int)(*this).GetBUInt();
+
+  const unsigned int rgb = (r << 16) | (g << 8) | b;
+
+  std::stringstream ss;
+  ss << std::hex << std::uppercase << rgb;
+
+  std::string out = ss.str();
+  while (out.length() < 6) {
+    out = "0" + out;
+  }
+  return out;
 }

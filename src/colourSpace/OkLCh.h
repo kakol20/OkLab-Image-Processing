@@ -1,13 +1,14 @@
 #pragma once
 
-#include "ColourSpace.hpp"
+#include "ColorSpace.hpp"
+#include "OkLab.h"
 #include "sRGB.hpp"
 #include <string>
 
-class OkLCh : public ColourSpace {
+class OkLCh : public ColorSpace {
 public:
-  OkLCh(const double l = 0., const double c = 0., const double h = 0.) : ColourSpace(l, c, h) {};
-  OkLCh(const OkLCh& other) : ColourSpace(other) {};
+  OkLCh(const double l = 0., const double c = 0., const double h = 0.) : ColorSpace(l, c, h) {};
+  OkLCh(const OkLCh& other) : ColorSpace(other) {};
 
   double GetL() const { return m_a; };
   double GetC() const { return m_b; };
@@ -15,6 +16,9 @@ public:
 
   static OkLCh sRGBtoOkLCh(const sRGB& srgb);
   static sRGB OkLChtosRGB(const OkLCh& oklch);
+
+  static OkLCh OkLabtoOkLCh(const OkLab& oklab);
+  static OkLab OkLChtoOkLab(const OkLCh& oklch);
 
   /// <summary>
   /// Overriden function to account for hue value

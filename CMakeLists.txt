@@ -16,9 +16,10 @@ project ("OkLab Image Processing")
 # Add source to this project's executable.
 add_executable (OkLabImgProc
   "src/main.cpp"
-  "src/colourSpace/ColourSpace.hpp"
+  "src/colourSpace/ColorSpace.hpp"
   "src/colourSpace/sRGB.hpp"
   "src/colourSpace/OkLCh.cpp"
+  "src/colourSpace/OkLab.cpp"
   "src/maths/Maths.hpp"
   "src/misc/Log.cpp"
   "ext/json/json.hpp"

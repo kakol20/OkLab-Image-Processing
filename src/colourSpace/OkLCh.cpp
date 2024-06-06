@@ -7,16 +7,14 @@ OkLCh OkLCh::sRGBtoOkLCh(const sRGB& srgb) {
   double h1 = srgb.GetB();
 
   // to Linear RGB
-  //val.Pow(2.224874);
-  l1 = std::pow(l1, 2.224874);
-  c1 = std::pow(c1, 2.224874);
-  h1 = std::pow(h1, 2.224874);
+  l1 = l1 <= 0.04045 ? l1 / 12.92 : std::pow((l1 + 0.055) / 1.055, 2.4);
+  c1 = c1 <= 0.04045 ? c1 / 12.92 : std::pow((c1 + 0.055) / 1.055, 2.4);
+  h1 = h1 <= 0.04045 ? h1 / 12.92 : std::pow((h1 + 0.055) / 1.055, 2.4);
 
   // to Linear LMS
-  //val = OkLab::LinearRGBtoLinearLMS * val;
-  double l2 = 0.412242 * l1 + 0.536262 * c1 + 0.051428 * h1;
-  double c2 = 0.211943 * l1 + 0.680702 * c1 + 0.107374 * h1;
-  double h2 = 0.088359 * l1 + 0.281847 * c1 + 0.630130 * h1;
+  double l2 = 0.41224204988807 * l1 + 0.53626162185168 * c1 + 0.05142804288870 * h1;
+  double c2 = 0.21194297298929 * l1 + 0.68070218481804 * c1 + 0.10737408156507 * h1;
+  double h2 = 0.08835888958899 * l1 + 0.28184744754987 * c1 + 0.63012965338243 * h1;
 
   // to LMS
   //val.Cbrt()
@@ -25,16 +23,15 @@ OkLCh OkLCh::sRGBtoOkLCh(const sRGB& srgb) {
   h1 = std::cbrt(h2);
 
   // to OkLab
-  //val = OkLab::LMStoLab * val;
-  l2 = 0.210454 * l1 + 0.793618 * c1 - 0.004072 * h1;
-  c2 = 1.977998 * l1 - 2.428592 * c1 + 0.450594 * h1;
-  h2 = 0.025904 * l1 + 0.782772 * c1 - 0.808676 * h1;
+  l2 = 0.21045425666795 * l1 + 0.79361779015852 * c1 - 0.00407204682647 * h1;
+  c2 = 1.97799849510000 * l1 - 2.42859220500000 * c1 + 0.45059370990000 * h1;
+  h2 = 0.02590402925006 * l1 + 0.78277173659806 * c1 - 0.80867576584811 * h1;
 
   // to OkLCh
   l1 = l2;
   c1 = std::sqrt(c2 * c2 + h2 * h2);
   h1 = Maths::UnsignedMod(std::atan2(h2, c2), Maths::Tau);
-  
+
   return OkLCh(l1, c1, h1);
 }
 
@@ -49,9 +46,9 @@ sRGB OkLCh::OkLChtosRGB(const OkLCh& oklch) {
   double b2 = g1 * std::sin(b1);
 
   // to LMS
-  r1 = r2 + 0.396338 * g2 + 0.215804 * b2;
-  g1 = r2 - 0.105561 * g2 - 0.063854 * b2;
-  b1 = r2 - 0.089484 * g2 - 1.291486 * b2;
+  r1 = r2 + 0.39633779217377 * g2 + 0.21580375806076 * b2;
+  g1 = r2 - 0.10556134232366 * g2 - 0.06385417477171 * b2;
+  b1 = r2 - 0.08948418209497 * g2 - 1.29148553786409 * b2;
 
   // to Linear LMS
   r2 = r1 * r1 * r1;
@@ -59,16 +56,30 @@ sRGB OkLCh::OkLChtosRGB(const OkLCh& oklch) {
   b2 = b1 * b1 * b1;
 
   // to Linear RGB
-  r1 = 4.076539 * r2 - 3.307097 * g2 + 0.230822 * b2;
-  g1 = -1.268606 * r2 + 2.609748 * g2 - 0.341164 * b2;
-  b1 = -0.004198 * r2 - 0.703568 * g2 + 1.707206 * b2;
+  r1 =  4.07653881638861 * r2 - 3.30709682773943 * g2 + 0.23082245163012 * b2;
+  g1 = -1.26860625095165 * r2 + 2.60974767679763 * g2 - 0.34116363525495 * b2;
+  b1 = -0.00419756377401 * r2 - 0.70356840947339 * g2 + 1.70720561792434 * b2;
 
   // to sRGB
-  r2 = Maths::NRoot(r1, 2.224874);
-  g2 = Maths::NRoot(g1, 2.224874);
-  b2 = Maths::NRoot(b1, 2.224874);
+  r1 = r1 <= 0.00313058 ? 12.92 * r1 : (Maths::NRoot(r1, 2.4) * 1.055) - 0.055;
+  g1 = g1 <= 0.00313058 ? 12.92 * g1 : (Maths::NRoot(g1, 2.4) * 1.055) - 0.055;
+  b1 = b1 <= 0.00313058 ? 12.92 * b1 : (Maths::NRoot(b1, 2.4) * 1.055) - 0.055;
 
-  return sRGB(r2, g2, b2);
+  return sRGB(r1, g1, b1);
+}
+
+OkLCh OkLCh::OkLabtoOkLCh(const OkLab& oklab) {
+  const double l = oklab.GetL();
+  const double c = std::sqrt(oklab.GetA() * oklab.GetA() + oklab.GetB() * oklab.GetB());
+  const double h = Maths::UnsignedMod(std::atan2(oklab.GetB(), oklab.GetA()), Maths::Tau);
+  return OkLCh(l, c, h);
+}
+
+OkLab OkLCh::OkLChtoOkLab(const OkLCh& oklch) {
+  const double l = oklch.GetL();
+  const double a = oklch.GetC() * std::cos(oklch.GetH());
+  const double b = oklch.GetC() * std::sin(oklch.GetH());
+  return OkLab(l, a, b);
 }
 
 std::string OkLCh::Debug(const bool inDegrees) const {
@@ -81,40 +92,40 @@ std::string OkLCh::Debug(const bool inDegrees) const {
 }
 
 OkLCh& OkLCh::operator/=(const OkLCh& other) {
-  ColourSpace lhs(other);
-  ColourSpace::operator/=(lhs);
+  ColorSpace lhs(other);
+  ColorSpace::operator/=(lhs);
   m_c = Maths::UnsignedMod(m_c, Maths::Tau);
   return *this;
 }
 
 OkLCh& OkLCh::operator*=(const OkLCh& other) {
-  ColourSpace lhs(other);
-  ColourSpace::operator*=(lhs);
+  ColorSpace lhs(other);
+  ColorSpace::operator*=(lhs);
   m_c = Maths::UnsignedMod(m_c, Maths::Tau);
   return *this;
 }
 
 OkLCh& OkLCh::operator+=(const OkLCh& other) {
-  ColourSpace lhs(other);
-  ColourSpace::operator+=(lhs);
+  ColorSpace lhs(other);
+  ColorSpace::operator+=(lhs);
   m_c = Maths::UnsignedMod(m_c, Maths::Tau);
   return *this;
 }
 
 OkLCh& OkLCh::operator-=(const OkLCh& other) {
-  ColourSpace lhs(other);
-  ColourSpace::operator-=(lhs);
+  ColorSpace lhs(other);
+  ColorSpace::operator-=(lhs);
   m_c = Maths::UnsignedMod(m_c, Maths::Tau);
   return *this;
 }
 
-OkLCh& OkLCh::operator*=(const double scalar) {
-  ColourSpace::operator*=(scalar);
+OkLCh& OkLCh::operator*=(const  double scalar) {
+  ColorSpace::operator*=(scalar);
   m_c = Maths::UnsignedMod(m_c, Maths::Tau);
   return *this;
 }
 
-void OkLCh::Fallback(const double change) {
+void OkLCh::Fallback(const  double change) {
   m_a = std::min(std::max(m_a, 0.), 1.);
   m_b = m_a == 0. || m_a == 1. ? 0. : m_b;
 
