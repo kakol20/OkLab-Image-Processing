@@ -17,7 +17,6 @@ OkLCh OkLCh::sRGBtoOkLCh(const sRGB& srgb) {
   double h2 = 0.08835888958899 * l1 + 0.28184744754987 * c1 + 0.63012965338243 * h1;
 
   // to LMS
-  //val.Cbrt()
   l1 = std::cbrt(l2);
   c1 = std::cbrt(c2);
   h1 = std::cbrt(h2);
