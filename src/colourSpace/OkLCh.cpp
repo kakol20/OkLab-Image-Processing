@@ -6,68 +6,112 @@ OkLCh OkLCh::sRGBtoOkLCh(const sRGB& srgb) {
   double c1 = srgb.GetG();
   double h1 = srgb.GetB();
 
-  // to Linear RGB
-  l1 = l1 <= 0.04045 ? l1 / 12.92 : std::pow((l1 + 0.055) / 1.055, 2.4);
-  c1 = c1 <= 0.04045 ? c1 / 12.92 : std::pow((c1 + 0.055) / 1.055, 2.4);
-  h1 = h1 <= 0.04045 ? h1 / 12.92 : std::pow((h1 + 0.055) / 1.055, 2.4);
+  // to reduce floating point error
+  if (l1 == 1. && c1 == 1. && h1 == 1.) return OkLCh(1., 0., 0.);
+  if (l1 == 0. && c1 == 0. && h1 == 0.) return OkLCh(0., 0., 0.);
 
-  // to Linear LMS
-  double l2 = 0.41224204988807 * l1 + 0.53626162185168 * c1 + 0.05142804288870 * h1;
-  double c2 = 0.21194297298929 * l1 + 0.68070218481804 * c1 + 0.10737408156507 * h1;
-  double h2 = 0.08835888958899 * l1 + 0.28184744754987 * c1 + 0.63012965338243 * h1;
+  if (l1 == c1 && l1 == h1) {
+    // if graycale - can skip some conversions
 
-  // to LMS
-  l1 = std::cbrt(l2);
-  c1 = std::cbrt(c2);
-  h1 = std::cbrt(h2);
+    // to Linear RGB
+    l1 = l1 <= 0.04045 ? l1 / 12.92 : std::pow((l1 + 0.055) / 1.055, 2.4);
 
-  // to OkLab
-  l2 = 0.21045425666795 * l1 + 0.79361779015852 * c1 - 0.00407204682647 * h1;
-  c2 = 1.97799849510000 * l1 - 2.42859220500000 * c1 + 0.45059370990000 * h1;
-  h2 = 0.02590402925006 * l1 + 0.78277173659806 * c1 - 0.80867576584811 * h1;
+    // to LMS - can skip "to Linear LMS" conversion
+    l1 = std::cbrt(l1);
 
-  // to OkLCh
-  l1 = l2;
-  c1 = std::sqrt(c2 * c2 + h2 * h2);
-  h1 = Maths::UnsignedMod(std::atan2(h2, c2), Maths::Tau);
+    // can skip "to OkLab" & "to OkLCh" conversions
+    return OkLCh(l1, 0., 0.);
+  }
+  else {
+    // to Linear RGB
+    l1 = l1 <= 0.04045 ? l1 / 12.92 : std::pow((l1 + 0.055) / 1.055, 2.4);
+    c1 = c1 <= 0.04045 ? c1 / 12.92 : std::pow((c1 + 0.055) / 1.055, 2.4);
+    h1 = h1 <= 0.04045 ? h1 / 12.92 : std::pow((h1 + 0.055) / 1.055, 2.4);
 
-  return OkLCh(l1, c1, h1);
+    // to Linear LMS
+    double l2 = 0.4122214708 * l1 + 0.5363325363 * c1 + 0.0514459929 * h1;
+    double c2 = 0.2119034982 * l1 + 0.6806995451 * c1 + 0.1073969566 * h1;
+    double h2 = 0.0883024619 * l1 + 0.2817188376 * c1 + 0.6299787005 * h1;
+
+    // to LMS
+    //val.Cbrt()
+    l1 = std::cbrt(l2);
+    c1 = std::cbrt(c2);
+    h1 = std::cbrt(h2);
+
+    // to OkLab
+    l2 = 0.2104542553 * l1 + 0.7936177850 * c1 - 0.0040720468 * h1;
+    c2 = 1.9779984951 * l1 - 2.4285922050 * c1 + 0.4505937099 * h1;
+    h2 = 0.0259040371 * l1 + 0.7827717662 * c1 - 0.8086757660 * h1;
+
+    // to OkLCh
+    l1 = l2;
+    c1 = std::sqrt(c2 * c2 + h2 * h2);
+    h1 = Maths::UnsignedMod(std::atan2(h2, c2), Maths::Tau);
+
+    return OkLCh(l1, c1, h1);
+  }
 }
 
 sRGB OkLCh::OkLChtosRGB(const OkLCh& oklch) {
-  double r1 = oklch.GetL();
-  double g1 = oklch.GetC();
-  double b1 = oklch.GetH();
+  // to reduce floating point error
+  if (oklch.GetL() == 1.) return sRGB(1., 1., 1.);
+  if (oklch.GetL() == 0.) return sRGB(0., 0., 0.);
 
-  // to OkLab
-  double r2 = r1;
-  double g2 = g1 * std::cos(b1);
-  double b2 = g1 * std::sin(b1);
+  if (oklch.GetC() == 0.) {
+    // if graycale - can skip some conversions
 
-  // to LMS
-  r1 = r2 + 0.39633779217377 * g2 + 0.21580375806076 * b2;
-  g1 = r2 - 0.10556134232366 * g2 - 0.06385417477171 * b2;
-  b1 = r2 - 0.08948418209497 * g2 - 1.29148553786409 * b2;
+    // can skip "to OkLab" converison
+    double v = oklch.GetL();
 
-  // to Linear LMS
-  r2 = r1 * r1 * r1;
-  g2 = g1 * g1 * g1;
-  b2 = b1 * b1 * b1;
+    // to Linear LMS - can skip "to LMS" conversion
+    v = v * v * v;
 
-  // to Linear RGB
-  r1 =  4.07653881638861 * r2 - 3.30709682773943 * g2 + 0.23082245163012 * b2;
-  g1 = -1.26860625095165 * r2 + 2.60974767679763 * g2 - 0.34116363525495 * b2;
-  b1 = -0.00419756377401 * r2 - 0.70356840947339 * g2 + 1.70720561792434 * b2;
+    // to sRGB - can skip "to Linear RGB" conversion
+    v = v <= 0.00313058 ? 12.92 * v : (Maths::NRoot(v, 2.4) * 1.055) - 0.055;
 
-  // to sRGB
-  r1 = r1 <= 0.00313058 ? 12.92 * r1 : (Maths::NRoot(r1, 2.4) * 1.055) - 0.055;
-  g1 = g1 <= 0.00313058 ? 12.92 * g1 : (Maths::NRoot(g1, 2.4) * 1.055) - 0.055;
-  b1 = b1 <= 0.00313058 ? 12.92 * b1 : (Maths::NRoot(b1, 2.4) * 1.055) - 0.055;
+    return sRGB(v, v, v);
+  }
+  else {
+    double r1 = oklch.GetL();
+    double g1 = oklch.GetC();
+    double b1 = oklch.GetH();
 
-  return sRGB(r1, g1, b1);
+    // to OkLab
+    double r2 = r1;
+    double g2 = g1 * std::cos(b1);
+    double b2 = g1 * std::sin(b1);
+
+    // to LMS
+    r1 = r2 + 0.3963377774 * g2 + 0.2158037573 * b2;
+    g1 = r2 - 0.1055613458 * g2 - 0.0638541728 * b2;
+    b1 = r2 - 0.0894841775 * g2 - 1.2914855480 * b2;
+
+    // to Linear LMS
+    r2 = r1 * r1 * r1;
+    g2 = g1 * g1 * g1;
+    b2 = b1 * b1 * b1;
+
+    // to Linear RGB
+    r1 = 4.0767416621 * r2 - 3.3077115913 * g2 + 0.2309699292 * b2;
+    g1 = -1.2684380046 * r2 + 2.6097574011 * g2 - 0.3413193965 * b2;
+    b1 = -0.0041960863 * r2 - 0.7034186147 * g2 + 1.7076147010 * b2;
+
+    // to sRGB
+    r1 = r1 <= 0.00313058 ? 12.92 * r1 : (Maths::NRoot(r1, 2.4) * 1.055) - 0.055;
+    g1 = g1 <= 0.00313058 ? 12.92 * g1 : (Maths::NRoot(g1, 2.4) * 1.055) - 0.055;
+    b1 = b1 <= 0.00313058 ? 12.92 * b1 : (Maths::NRoot(b1, 2.4) * 1.055) - 0.055;
+
+    return sRGB(r1, g1, b1);
+  }
 }
 
 OkLCh OkLCh::OkLabtoOkLCh(const OkLab& oklab) {
+  // to reduce floating point error
+  if (oklab.GetL() == 1.) return OkLCh(1., 0., 0.);
+  if (oklab.GetL() == 0.) return OkLCh(0., 0., 0.);
+  if (oklab.GetA() == 0. && oklab.GetB() == 0.) return OkLCh(oklab.GetL(), 0., 0.);
+
   const double l = oklab.GetL();
   const double c = std::sqrt(oklab.GetA() * oklab.GetA() + oklab.GetB() * oklab.GetB());
   const double h = Maths::UnsignedMod(std::atan2(oklab.GetB(), oklab.GetA()), Maths::Tau);
@@ -75,6 +119,11 @@ OkLCh OkLCh::OkLabtoOkLCh(const OkLab& oklab) {
 }
 
 OkLab OkLCh::OkLChtoOkLab(const OkLCh& oklch) {
+  // to reduce floating point error
+  if (oklch.GetL() == 1.) return OkLab(1., 0., 0.);
+  if (oklch.GetL() == 0.) return OkLab(0., 0., 0.);
+  if (oklch.GetC() == 0.) return OkLab(oklch.GetL(), 0., 0.);
+
   const double l = oklch.GetL();
   const double a = oklch.GetC() * std::cos(oklch.GetH());
   const double b = oklch.GetC() * std::sin(oklch.GetH());
@@ -124,17 +173,21 @@ OkLCh& OkLCh::operator*=(const  double scalar) {
   return *this;
 }
 
-void OkLCh::Fallback(const  double change) {
-  m_a = std::min(std::max(m_a, 0.), 1.);
-  m_b = m_a == 0. || m_a == 1. ? 0. : m_b;
+void OkLCh::Fallback(const int maxIter) {
+  int iter = 0;
 
-  sRGB current = OkLCh::OkLChtosRGB(*this);
-  while (!current.IsInside()) {
-    m_b -= change;
-    m_b = std::max(m_b, 0.);
+  while (iter < maxIter) {
+    sRGB rgb = OkLCh::OkLChtosRGB(*this);
+    rgb.Clamp();
 
-    if (m_b == 0) break;
-    current = OkLCh::OkLChtosRGB(*this);
+    OkLCh outLCh = OkLCh::sRGBtoOkLCh(rgb);
+
+    m_b = outLCh.GetC();
+    m_c = outLCh.GetH();
+
+    if ((*this).IsInsidesRGB()) break;
+
+    iter++;
   }
 }
 
