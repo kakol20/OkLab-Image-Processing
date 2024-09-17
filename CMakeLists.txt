@@ -15,17 +15,18 @@ project ("OkLab Image Processing")
 
 # Add source to this project's executable.
 add_executable (OkLabImgProc
-  "src/main.cpp"
-  "src/colourSpace/ColorSpace.hpp"
-  "src/colourSpace/sRGB.hpp"
-  "src/colourSpace/OkLCh.cpp"
-  "src/colourSpace/OkLab.cpp"
-  "src/maths/Maths.hpp"
-  "src/misc/Log.cpp"
   "ext/json/json.hpp"
   "ext/stb/stb_image.h"
   "ext/stb/stb_image_write.h"
-  "src/image/Image.cpp")
+  "src/colourSpace/ColorSpace.hpp"
+  "src/colourSpace/OkLab.cpp"
+  "src/colourSpace/OkLCh.cpp"
+  "src/colourSpace/sRGB.hpp"
+  "src/image/Image.cpp"
+  "src/maths/Maths.hpp"
+  "src/other/Log.cpp"
+  "src/main.cpp"
+)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET OkLabImgProc PROPERTY CXX_STANDARD 20)
